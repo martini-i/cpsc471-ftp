@@ -4,7 +4,7 @@
 ## Members/Emails:
 
 Martin Nguyen / martinnguyen34@csu.fullerton.edu <br>
-Jasmine Cerasuolo / <br>
+Jasmine Cerasuolo / Jcerasuolo@csu.fullerton.edu <br>
 
 
 ====================================================================
