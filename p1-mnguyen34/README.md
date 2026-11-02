@@ -16,5 +16,8 @@
    exactly that many bytes. `send()` and `recv()` may move fewer bytes than
    requested, so `send_all()` and `receive_all()` loop until every byte is moved.
 
+2. **Ephemeral Listener:** For each ls, get, and put, the client binds a new
+socket to port 0 so the OS assigns a free port, then sends that port
+number to the server, which connects to it as the data connection.
 
 ## Special Notes:
