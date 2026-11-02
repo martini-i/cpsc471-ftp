@@ -36,4 +36,8 @@ def send_command(sock, text: str):
 
 def open_ephemeral_listener():
     # opens a listener socket on an ephemeral port and returns the socket and port number
-    # TODO: implement this function 
+    listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    listener.bind(('', 0))
+    listener.listen(1)
+    listener.settimeout(15)
+    return listener, listener.getsockname()[1]
