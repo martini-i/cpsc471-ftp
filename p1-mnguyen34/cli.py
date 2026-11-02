@@ -33,3 +33,7 @@ def send_command(sock, text: str):
     # send one command to server; 10-byte sized header then rest of msg
     data = text.encode()
     send_all(sock, f"{len(data):0{HEADER_SIZE}}".encode() + data)
+
+def open_ephemeral_listener():
+    # opens a listener socket on an ephemeral port and returns the socket and port number
+    # TODO: implement this function 
