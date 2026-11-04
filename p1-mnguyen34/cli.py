@@ -41,3 +41,45 @@ def open_ephemeral_listener():
     listener.listen(1)
     listener.settimeout(15)
     return listener, listener.getsockname()[1]
+
+def do_ls(control_sock):
+    # send ls command to server and print reply
+    listener, port = open_ephemeral_listener()
+    send_command(control_sock, f"ls {port}")
+
+    reply = receive_reply(control_sock)
+    if not reply.startswith("OK"):
+        print(reply)
+        listener.close()
+        return
+
+    data_sock, _ = listener.accept()
+    size = int(receive_all(data_sock, HEADER_SIZE).decode())
+    listing = receive_all(data_sock, size)
+    data_sock.close()
+    listener.close()
+
+    print(listing.decode(errors='replace'), end='')
+    print(f"ls {size} bytes received")
+
+def do_get(control_sock, filename):
+    # send get command to server and print reply
+    listener, port = open_ephemeral_listener()
+    send_command(control_sock, f"get {filename} {port}")
+
+    reply = receive_reply(control_sock)
+    if not reply.startswith("OK"):
+        print(reply)
+        listener.close()
+        return
+
+    data_sock, _ = listener.accept()
+    size = int(receive_all(data_sock, HEADER_SIZE).decode())
+    file_data = receive_all(data_sock, size)
+    data_sock.close()
+    listener.close()
+
+    with open(filename, 'wb') as f:
+        f.write(file_data)
+
+    print(f"{filename} {size} bytes transferred")
