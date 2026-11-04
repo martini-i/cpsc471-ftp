@@ -83,3 +83,37 @@ def do_get(control_sock, filename):
         f.write(file_data)
 
     print(f"{filename} {size} bytes transferred")
+
+def do_put(control_sock, filename):
+    # send put command to server and print reply
+    if not os.path.isfile(filename):
+        print(f"Error: {filename} does not exist or is not a file")
+        return
+
+    size = os.path.getsize(filename)
+    listener, port = open_ephemeral_listener()
+    send_command(control_sock, f"put {filename} {size} {port}")
+
+    reply = receive_reply(control_sock)
+    if not reply.startswith("OK"):
+        print(reply)
+        listener.close()
+        return
+
+    data_sock, _ = listener.accept()
+    send_all(data_sock, f"{size:0{HEADER_SIZE}}".encode())
+    with open(filename, 'rb') as f:
+        while chunk := f.read(65536):
+        # read file in chunks of 64KB to avoid loading entire file into memory
+            send_all(data_sock, chunk)
+    data_sock.close()
+    listener.close()
+
+    final_reply = receive_reply(control_sock)
+    if final_reply.startswith("OK"):
+        print(f"{filename} {size} bytes transferred")
+    else:
+        print(final_reply)
+
+def main():
+    

@@ -23,6 +23,8 @@ number to the server, which connects to it as the data connection.
 
 4. **do_get function:** The client opens an ephemeral listener and sends `get <filename> <port>`. The port is always the last word, so the server splits it off from the right, which lets file names contain spaces. If the file doesn't exist, the server replies `ERR` and no data connection is opened; the client prints the error. Otherwise the server replies `OK`, connects to the port, and sends the file (10-byte size header + file bytes). The client writes the file in binary mode, so any file type works, and prints `<filename> <bytes> bytes transferred`.
 
+5. **do_put function:** The client first checks that the file exists locally; if not, it prints an error and never contacts the server. Otherwise it opens an ephemeral listener and sends `put <filename> <size> <port>`. The last two words are always the size and port, so the server splits them off from the right, which lets file names contain spaces. If the server replies `OK`, it connects to the port, and the client sends the file (10-byte size header + file bytes) in 64 KB chunks so large files don't have to fit in memory. After the data connection closes, the server sends a second reply on the control connection: `OK` once the whole file is saved, or `ERR` if it failed. The client waits for this reply before printing `<filename> <bytes> bytes transferred`, so the next command's reply isn't confused with it.
+
 
 ## Special Notes:
 
