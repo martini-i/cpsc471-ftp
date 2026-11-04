@@ -116,4 +116,56 @@ def do_put(control_sock, filename):
         print(final_reply)
 
 def main():
-    
+    if len(sys.argv) != 3:
+        print(f"Usage: {sys.argv[0]} <server_ip> <server_port>")
+        sys.exit(1)
+    server_name = sys.argv[1]
+    server_port = int(sys.argv[2])
+
+    control_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        control_sock.connect((server_name, server_port))
+    except Exception as e:
+        print(f"Error connecting to server {server_name}:{server_port} ({e})")
+        sys.exit(1)
+    print(f"Connected to server {server_name}:{server_port}")
+
+    while True:
+        try:
+            line = input("ftp> ").strip()
+        except EOFError:
+            line = "quit"
+        if not line:
+            continue
+
+        parts = line.split(maxsplit=1)
+        command = parts[0].lower()
+
+        try:
+            if command == "ls" and len(parts) == 1:
+                do_ls(control_sock)
+            elif command == "get" and len(parts) == 2:
+                do_get(control_sock, parts[1])
+            elif command == "put" and len(parts) == 2:
+                do_put(control_sock, parts[1])
+            elif command == "quit":
+
+                send_command(control_sock, "quit")
+                receive_reply(control_sock)
+                control_sock.close()
+                print("Goodbye")
+                break
+            else:
+                print("Usage: ls | get <filename> | put <filename> | quit")
+
+        except socket.timeout:
+            print("Error: Connection timed out")
+
+        except (RuntimeError, ConnectionError) as e:
+            print(f"Error: Lost connection to server: ({e})")
+            control_sock.close()
+            break
+            
+
+if __name__ == "__main__":
+    main()
