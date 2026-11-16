@@ -75,12 +75,20 @@ def do_get(control_sock, filename):
 
     data_sock, _ = listener.accept()
     size = int(receive_all(data_sock, HEADER_SIZE).decode())
-    file_data = receive_all(data_sock, size)
+    with open(filename, 'wb') as f:
+        remaining = size
+
+        while remaining > 0:
+            chunk = data_sock.recv(min(65536, remaining))
+
+            if not chunk:
+                raise ConnectionError("Download ended before all bytes arrived")
+
+            f.write(chunk)
+            remaining -= len(chunk)
+
     data_sock.close()
     listener.close()
-
-    with open(filename, 'wb') as f:
-        f.write(file_data)
 
     print(f"{filename} {size} bytes transferred")
 
