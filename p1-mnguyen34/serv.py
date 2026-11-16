@@ -119,12 +119,17 @@ while True:
                             if size != expected_size:
                                 raise ValueError("File size doesn't match put command")
                             remaining = size
-                            while remaining:
-                                chunk = data_socket.recv(min(65536, remaining))
-                                if not chunk:
-                                    raise ConnectionError("Upload ended before all bytes arrived")
-                                file.write(chunk)
-                                remaining -= len(chunk)
+                            with open(filename, "wb") as file:
+                                while remaining > 0:
+                                    chunk = data_socket.recv(min(65536, remaining))
+
+                                    if not chunk:
+                                        raise ConnectionError(
+                                            "Upload ended before all bytes arrived"
+                                        )
+
+                                    file.write(chunk)
+                                    remaining -= len(chunk)
                     finally:
                         data_socket.close()
                     send_message(connection, "OK")
@@ -155,7 +160,7 @@ while True:
                     send_message(connection, "ERR Unknown command or missing arguments")
                     print(f"FAILURE {action}: invalid command", flush=True)
 
-            except (OSError, ValueError) as error:
+            except (OSError, ValueError, ConnectionError) as error:
                 print(f"FAILURE {action}: {error}", flush=True)
                 # get/ls have no final control reply
                 if action in ("get", "ls") and transfer_started:
