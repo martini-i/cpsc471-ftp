@@ -52,7 +52,19 @@ number to the server, which connects to it as the data connection.
 6. **quit:** The client sends `quit`, waits for the server's reply, then both sides close the control connection. The server stays running for the next client.
 
 ### Server Design:
+1. Server Setup and Control Connection: The server starts by creating a TCP socket, binding it to the port specified by the user, and listening for incoming connections. When a client connects, the server accepts the connection and keeps the control channel open to receive multiple FTP commands. The server processes commands until the client sends quit or disconnects.
 
+2. Command Processing: The server uses a 10-byte header to determine the length of each incoming command. It reads the specified number of bytes before processing the request. The server identifies the command (ls, get, put, or quit) and extracts any required arguments, such as filenames, file sizes, and data port numbers.
+
+3. Data Connection: For every ls, get, or put command, the client creates a temporary listening socket using an ephemeral port. The client sends the port number through the control connection. The server then creates a separate TCP socket and connects to the client's temporary port. This connection is used only for the requested data transfer and is closed afterward.
+
+4. GET Command: When the server receives get <filename> <port>, it checks whether the requested file exists and can be opened. If successful, the server connects to the client's data port and sends an OK response through the control connection. It then sends a 10-byte file-size header followed by the file contents in chunks of up to 65,536 bytes. If the file cannot be opened, the server sends an error response.
+
+5. PUT Command: When the server receives put <filename> <size> <port>, it establishes the data connection and opens the destination file for writing. The server sends an initial OK response, receives the 10-byte file-size header, and verifies that it matches the expected size. It then receives the file in chunks and writes the data to disk. After successfully receiving the entire file, the server sends a final OK response through the control connection.
+
+6. LS Command: When the server receives ls <port>, it retrieves the filenames from its current directory and sorts them alphabetically. It connects to the client's data port, sends OK through the control connection, and transfers the directory listing with a 10-byte length header. The data connection closes after the listing has been sent.
+
+7. Error Handling and Session Termination: The server sends ERR responses when it encounters invalid commands or certain file and connection errors. It also prints success or failure messages in its terminal. When the client sends quit, the server sends a goodbye response and closes that client's control connection. The server continues running so that another client can connect.
 
 
 ## Special Notes:
